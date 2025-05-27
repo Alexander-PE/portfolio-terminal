@@ -1,10 +1,172 @@
----
----
-
-<header class="w-3xl p-2 bg-gray-800 rounded-t-xl text-center">
-  <p class="text-xs text-white font-mono">alexander@portfolio ~zsh</p>
+<header class="w-3xl p-2 bg-gray-800 rounded-t-lg text-center">
+  <p class="text-xs text-white font-mono">alexanders@terminal   ~zsh</p>
 </header>
 
-<section class="h-80 w-3xl rounded-b-xl bg-gray-900">
+<section
+  class="flex flex-col h-80 w-3xl rounded-b-lg bg-gray-900 p-3 overflow-y-auto text-white text-xs cursor-text"
+  id="terminal"
+>
+  <div class="flex flex-col" id="output">
+    <p class="font-medium">Write <code>help</code> to see the command list</p>
+  </div>
 
+  <div class="flex flex-col">
+    <div class="flex items-center">
+      <p class="text-white font-medium mr-2 mb-1">alexanders@terminal ~ %</p>
+      <input
+        type="text"
+        id="input"
+        class="mb-1 bg-transparent border-none outline-none flex-1 w-full"
+        autofocus
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+  </div>
 </section>
+
+<script>
+  const terminal = document.getElementById("terminal") as HTMLBodyElement;
+  const start = `
+  <div class="flex flex-col" id='output'></div>
+  <div class="flex items-center">
+    <p class="font-medium mr-2 mb-1">alexanders@terminal ~ %</p>
+    <input id="input" type="text" class="mb-1 bg-transparent border-none outline-none flex-1 w-full" autofocus autocomplete="off" spellcheck="false">
+  </div>`;
+  let command_history =
+    JSON.parse(localStorage.getItem("command_history") as any) || [];
+  let historyIndex = command_history.length;
+
+  function initializeTerminal() {
+    const input = document.getElementById("input") as HTMLInputElement;
+    input.focus()
+    const output = document.getElementById("output") as HTMLElement;
+
+    terminal.addEventListener("click", (e) => {
+      input.focus();
+    });
+
+    input.addEventListener("keydown", function (e) {
+      // go to last command used
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (command_history.length > 0) {
+          historyIndex = Math.max(0, historyIndex - 1); // if history index cant be lower than 0
+          input.value = command_history[historyIndex] || "";
+        }
+      }
+
+      // go to next command used
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (command_history.length > 0) {
+          historyIndex++;
+          if (historyIndex < command_history.length) {
+            input.value = command_history[historyIndex];
+          } else {
+            input.value = "";
+            historyIndex = command_history.length;
+          }
+        }
+      }
+
+      if (e.key === "Enter") {
+        const command = input.value.trim().toLowerCase();
+
+        if (command === "clear") {
+          terminal.innerHTML = start;
+          command_history = [];
+          historyIndex = -1;
+          initializeTerminal();
+          return;
+        }
+
+        output.innerHTML += `
+          <div class="flex items-center">
+            <p class="font-medium mr-2 mb-1">alexanders@terminal ~ %</p>
+            <p class="mb-1 text-white text-xs font-medium text-left">${command}</p>
+          </div>
+        `;
+
+        switch (command) {
+          case "help":
+            output.innerHTML += `
+              <div class="mb-1 break-words">
+               <ul>
+                  <li>bio: <i>A bit about me :)</i></li>
+                  <li>web: <i>My portfolio website</i></li>
+                  <li>cv: <i>My curriculum vitae updated</i></li>
+                  <li>projects: <i>My projects</i></li>
+                  <li>contact: <i>Contact Information</i></li>
+                  <li>clear: <i>Clean the console</i></li>
+                </ul>
+
+              </div>
+            `
+            break;
+          case "cv":
+            output.innerHTML += `
+              <div class="mb-1">
+                <p>Download my CV: <a href="/MyCV.pdf" download class="underline text-white">Download CV</a></p>
+              </div>
+            `
+            break;
+          case "contact":
+            output.innerHTML += `
+              <div class="mb-1">
+                <p>Email: <a rel="noopener noreferrer" href="mailto:alexander.pereze02@gmail.com" target="_blank" class="underline text-white">alexander.pereze02@gmail.com</a></p>
+                <p>Linkedin: <a rel="noopener noreferrer" href="https://linkedin.com/in/alexander-pe" target="_blank" class="underline text-white">linkedin.com/in/alexander-pe</a></p>
+                <p>GitHub: <a rel="noopener noreferrer" href="https://github.com/Alexander-PE" target="_blank" class="underline text-white">github.com/Alexander-PE</a></p>
+              </div>
+            `
+            break;
+          case "web":
+            output.innerHTML += `
+              <div class="mb-1">
+                <p>Visit my portfolio website at <a class="underline text-white" target="_blank" rel="noopener noreferrer" href="https://portfolioape.netlify.app/">www.portfolioape.netlify.app/</a></p>
+              </div>
+            `
+            break;
+          case "projects":
+            output.innerHTML += `
+              <div class="mb-1">
+                <ul class="list-none">
+                  <li>▸ <a href="https://tmanagerapp.netlify.app/" target="_blank" rel="noopener noreferrer" class="underline text-white">T-Manager (trello)</a> | Webapp</li>
+                  <li>▸ <a href="https://typing-simplegame.netlify.app/" target="_blank" rel="noopener noreferrer" class="underline text-white">Typing Game</a> | Webapp</li>
+                </ul>
+              </div>
+            `;
+            break;
+          case "bio":
+            output.innerHTML += `
+              <div class="mb-1">
+                <p>I'm Alexander Perez, a Front-End developer passionate about creating innovative and high-quality solutions. I focus on effective collaboration and problem-solving, always seeking to improve the user experience.</p>
+              </div>
+            `;
+            break;
+          default:
+            output.innerHTML += `
+              <div class="mb-1">
+                <p>zsh: command not found: ${command}<br> use <code>help</code> to see the command list </p>
+              </div>
+            `;
+        }
+
+        // update command history
+        if (command) {
+          command_history.push(command);
+          historyIndex = command_history.length;
+          localStorage.setItem(
+            "command_history",
+            JSON.stringify(command_history)
+          );
+        }
+
+        terminal.scrollTop = terminal.scrollHeight // auto scroll down
+        input.value = "";
+      }
+    });
+  }
+
+  initializeTerminal();
+</script>
